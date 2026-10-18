@@ -11,16 +11,35 @@ const WARNING_META := &"_is_warning"
 const ERROR_META := &"_is_error"
 const INDENT := "  "
 
+## Which top-level items to copy. Items the editor marks as neither are copied only with [constant ALL].
+enum Filter { ALL, ERRORS, WARNINGS }
 
-## Returns the text of every item under [param root] (the tree's hidden root), in tree order.
-## Reads [param columns] cells per item. Returns an empty string if [param root] is null or empty.
-static func from_tree(root: TreeItem, columns: int) -> String:
+
+## Returns the text of every item under [param root] (the tree's hidden root) that [param filter]
+## keeps, in tree order. Reads [param columns] cells per item. Returns an empty string if
+## [param root] is null or nothing is kept.
+static func from_tree(root: TreeItem, columns: int, filter := Filter.ALL) -> String:
 	var lines := PackedStringArray()
+	for item in _kept(root, filter):
+		_append(item, columns, 0, lines)
+	return "\n".join(lines)
+
+
+## How many top-level items under [param root] [param filter] keeps.
+static func count(root: TreeItem, filter := Filter.ALL) -> int:
+	return _kept(root, filter).size()
+
+
+static func _kept(root: TreeItem, filter: Filter) -> Array[TreeItem]:
+	var kept: Array[TreeItem] = []
 	var item := root.get_first_child() if root else null
 	while item:
-		_append(item, columns, 0, lines)
+		if filter == Filter.ALL \
+				or filter == Filter.ERRORS and item.has_meta(ERROR_META) \
+				or filter == Filter.WARNINGS and item.has_meta(WARNING_META):
+			kept.append(item)
 		item = item.get_next()
-	return "\n".join(lines)
+	return kept
 
 
 static func _append(item: TreeItem, columns: int, depth: int, lines: PackedStringArray) -> void:

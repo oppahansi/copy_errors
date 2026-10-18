@@ -1,15 +1,16 @@
 # Copy Errors
 
-A small Godot 4 editor plugin that adds a **Copy All** button to the debugger's **Errors** tab.
+A small Godot 4 editor plugin that adds **Copy Errors**, **Copy Warnings** and **Copy All** buttons to the debugger's **Errors** tab.
 One click copies every error and warning, with its source and stack trace, to the clipboard as
 plain text, ready to paste into an issue, a chat or a log.
 
-<!-- Screenshot placeholder: add media/screenshot.png (the Errors tab with the Copy All button) and
-     link it here, e.g. ![The Copy All button in the Errors tab](media/screenshot.png) -->
+<!-- Screenshot placeholder: add media/screenshot.png (the Errors tab with the copy buttons) and
+     link it here, e.g. ![The copy buttons in the Errors tab](media/screenshot.png) -->
 
 ## Features
 
-- **Copy All** button next to **Clear** in the Errors tab of every debugger session.
+- **Copy Errors**, **Copy Warnings** and **Copy All** buttons next to **Clear** in the Errors tab of every
+  debugger session: only the errors, only the warnings, or both.
 - Copies errors and warnings in the order shown, each with its details: the script or C++ source,
   the original C++ error and every stack frame.
 - Marks each entry with `E` (error) or `W` (warning), like the editor's own **Copy Error** entry.
@@ -46,7 +47,8 @@ E 0:00:00:376 level.gd:8 @ load_level(): Level file not found.
 
 1. Run your project from the editor.
 2. Open the **Debugger** panel at the bottom and switch to the **Errors** tab.
-3. Click **Copy All**. The Output panel confirms how many entries were copied.
+3. Click **Copy Errors**, **Copy Warnings** or **Copy All**. The Output panel confirms how many entries were
+   copied.
 
 To copy a single entry, use the editor's built-in right-click menu entry **Copy Error**.
 
@@ -67,7 +69,7 @@ own UI. In each debugger session (`ScriptEditorDebugger`) it looks for the tab p
 and Clear) and which holds the two-column error `Tree`. It matches this layout, not the tab's name,
 because the name is translated and gets an error count appended ("Errors (3)").
 
-The button reads the tree's text column by column: one line per entry and its details indented
+The buttons read the tree's text column by column: one line per entry and its details indented
 below it. The formatting lives in `error_text.gd`, separate from the editor wiring, and is unit
 tested.
 
@@ -79,7 +81,9 @@ When the plugin is disabled, it removes its buttons and disconnects its signals.
   prints a warning in the Output panel and does nothing; it never breaks the editor.
 - It copies what the Errors tab shows, i.e. errors from the running project. Errors of the editor
   itself appear in the Output panel, which already supports selecting and copying.
-- The button's text is English only.
+- The buttons' text is English only.
+- Errors and warnings are told apart by the marks the editor puts on each entry. An entry with neither mark is
+  copied only by **Copy All**.
 - In headless mode or on platforms without a clipboard, nothing can be copied.
 
 ## Development

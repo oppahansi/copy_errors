@@ -1,7 +1,8 @@
 @tool
 extends EditorPlugin
-## Adds a "Copy All" button to the toolbar of the debugger's Errors tab. It copies every error and
-## warning in the tab, with its source and stack frames, to the clipboard as plain text.
+## Adds "Copy Errors", "Copy Warnings" and "Copy All" buttons to the toolbar of the debugger's Errors
+## tab. They copy the tab's errors, its warnings, or both, each with its source and stack frames, to
+## the clipboard as plain text.
 ##
 ## Godot has no API for the Errors tab, so the plugin finds it in the editor's UI by its layout:
 ## in each debugger session, the Errors tab is a [VBoxContainer] page of a [TabContainer] whose
@@ -11,9 +12,15 @@ extends EditorPlugin
 
 const ErrorText := preload("error_text.gd")
 
-const BUTTON_NAME := &"CopyAllErrors"
-const BUTTON_TEXT := "Copy All"
-const BUTTON_TOOLTIP := "Copy every error and warning in this tab, with sources and stack traces, to the clipboard."
+## The buttons, in toolbar order: node name, text, tooltip, filter and what the log calls the copied items.
+const BUTTONS: Array[Dictionary] = [
+	{"name": &"CopyErrorsOnly", "text": "Copy Errors", "filter": ErrorText.Filter.ERRORS, "items": "error(s)",
+		"tooltip": "Copy the errors in this tab, with sources and stack traces, to the clipboard."},
+	{"name": &"CopyWarningsOnly", "text": "Copy Warnings", "filter": ErrorText.Filter.WARNINGS, "items": "warning(s)",
+		"tooltip": "Copy the warnings in this tab, with sources and stack traces, to the clipboard."},
+	{"name": &"CopyAllErrors", "text": "Copy All", "filter": ErrorText.Filter.ALL, "items": "error(s) and warning(s)",
+		"tooltip": "Copy every error and warning in this tab, with sources and stack traces, to the clipboard."},
+]
 const LOG_PREFIX := "Copy Errors: "
 ## The editor's error tree has a time column and a message column.
 const ERROR_TREE_COLUMNS := 2
@@ -25,7 +32,7 @@ func _enter_tree() -> void:
 	get_tree().node_added.connect(_on_node_added)
 	if _add_buttons() == 0:
 		push_warning(LOG_PREFIX + "couldn't find the debugger's Errors tab in this editor version, "
-				+ "so no Copy All button was added.")
+				+ "so no copy buttons were added.")
 
 
 func _exit_tree() -> void:
@@ -43,7 +50,7 @@ func _on_node_added(node: Node) -> void:
 		_add_buttons.call_deferred()
 
 
-## Adds a button to every Errors tab that lacks one. Returns the number of Errors tabs found.
+## Adds the buttons to every Errors tab that lacks them. Returns the number of Errors tabs found.
 func _add_buttons() -> int:
 	# Forget the buttons of debugger sessions that were removed.
 	var alive: Array[Button] = []
@@ -54,28 +61,30 @@ func _add_buttons() -> int:
 	var tabs := _find_error_tabs()
 	for tab in tabs:
 		var toolbar := tab.get_child(0) as HBoxContainer
-		if toolbar.has_node(NodePath(BUTTON_NAME)):
-			continue
-		var button := Button.new()
-		button.name = BUTTON_NAME
-		button.text = BUTTON_TEXT
-		button.tooltip_text = BUTTON_TOOLTIP
-		button.pressed.connect(_copy.bind(_error_tree_in(tab)))
-		toolbar.add_child(button)
-		_buttons.append(button)
+		for spec in BUTTONS:
+			if toolbar.has_node(NodePath(spec["name"])):
+				continue
+			var button := Button.new()
+			button.name = spec["name"]
+			button.text = spec["text"]
+			button.tooltip_text = spec["tooltip"]
+			button.pressed.connect(_copy.bind(_error_tree_in(tab), spec))
+			toolbar.add_child(button)
+			_buttons.append(button)
 	return tabs.size()
 
 
-func _copy(tree: Tree) -> void:
+func _copy(tree: Tree, spec: Dictionary) -> void:
 	if not is_instance_valid(tree):
 		return
 	var root := tree.get_root()
-	var text := ErrorText.from_tree(root, tree.columns)
+	var filter: ErrorText.Filter = spec["filter"]
+	var text := ErrorText.from_tree(root, tree.columns, filter)
 	if text.is_empty():
-		print(LOG_PREFIX + "the Errors tab is empty, nothing was copied.")
+		print(LOG_PREFIX + "no %s in the Errors tab, nothing was copied." % spec["items"])
 		return
 	DisplayServer.clipboard_set(text)
-	print(LOG_PREFIX + "copied %d error(s) and warning(s) to the clipboard." % root.get_child_count())
+	print(LOG_PREFIX + "copied %d %s to the clipboard." % [ErrorText.count(root, filter), spec["items"]])
 
 
 func _find_error_tabs() -> Array[VBoxContainer]:

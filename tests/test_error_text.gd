@@ -84,3 +84,34 @@ func _item(tree: Tree, parent: TreeItem, first: String, second: String) -> TreeI
 	item.set_text(0, first)
 	item.set_text(1, second)
 	return item
+
+
+func test_filters_keep_only_errors_or_only_warnings() -> void:
+	var tree := Tree.new()
+	tree.columns = 2
+	var root := tree.create_item()
+	var warning := _item(tree, root, "0:00:01:000", "Unused variable.")
+	warning.set_meta(ErrorText.WARNING_META, true)
+	_item(tree, warning, "<GDScript Source>", "a.gd:3")
+	var error := _item(tree, root, "0:00:02:000", "Invalid call.")
+	error.set_meta(ErrorText.ERROR_META, true)
+	_item(tree, error, "<Stack Trace>", "b.gd:9 @ run()")
+	_item(tree, root, "0:00:03:000", "Unmarked.")
+	assert_eq(ErrorText.from_tree(root, tree.columns, ErrorText.Filter.ERRORS),
+			"E 0:00:02:000 Invalid call.\n  <Stack Trace> b.gd:9 @ run()")
+	assert_eq(ErrorText.from_tree(root, tree.columns, ErrorText.Filter.WARNINGS),
+			"W 0:00:01:000 Unused variable.\n  <GDScript Source> a.gd:3")
+	assert_eq(ErrorText.count(root, ErrorText.Filter.ERRORS), 1)
+	assert_eq(ErrorText.count(root, ErrorText.Filter.WARNINGS), 1)
+	assert_eq(ErrorText.count(root), 3, "an unmarked item is copied only with all")
+	tree.free()
+
+
+func test_a_filter_with_nothing_to_keep_gives_empty_text() -> void:
+	var tree := Tree.new()
+	tree.columns = 2
+	var root := tree.create_item()
+	_item(tree, root, "0:00:01:000", "An error.").set_meta(ErrorText.ERROR_META, true)
+	assert_eq(ErrorText.from_tree(root, tree.columns, ErrorText.Filter.WARNINGS), "")
+	assert_eq(ErrorText.count(null, ErrorText.Filter.ERRORS), 0)
+	tree.free()
