@@ -1,0 +1,11 @@
+# Godot 4+ specific ignores
+.godot/
+/android/
+
+# Local overrides
+override.cfg
+
+# OS and editor files
+.DS_Store
+Thumbs.db
+*.tmp
