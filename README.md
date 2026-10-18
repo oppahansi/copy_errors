@@ -4,8 +4,7 @@ A small Godot 4 editor plugin that adds **Copy Errors**, **Copy Warnings** and *
 One click copies every error and warning, with its source and stack trace, to the clipboard as
 plain text, ready to paste into an issue, a chat or a log.
 
-<!-- Screenshot placeholder: add media/screenshot.png (the Errors tab with the copy buttons) and
-     link it here, e.g. ![The copy buttons in the Errors tab](media/screenshot.png) -->
+![The copy buttons in the Errors tab](media/screenshot.png)
 
 ## Features
 
