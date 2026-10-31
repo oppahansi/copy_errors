@@ -1,5 +1,7 @@
 # Copy Errors
 
+[![Discord](https://img.shields.io/static/v1?logo=discord&label=discord&message=Join&color=blue)](https://discord.gg/ncKmDEArqg)
+
 A small Godot 4 editor plugin that adds **Copy Errors**, **Copy Warnings** and **Copy All** buttons to the debugger's **Errors** tab.
 One click copies every error and warning, with its source and stack trace, to the clipboard as
 plain text, ready to paste into an issue, a chat or a log.
